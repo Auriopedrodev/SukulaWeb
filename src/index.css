@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+/*
+  CORES DO PROJETO (copiadas do Figma "SukulaWeb.fig").
+  Para mudar uma cor no site inteiro, basta mudar aqui.
+  Cada cor pode ser usada nas classes do Tailwind, por exemplo:
+    --color-fundo  ->  bg-fundo, text-fundo, border-fundo
+*/
+@theme {
+  --font-sans: "Montserrat", sans-serif;
+
+  /* Azuis principais */
+  --color-fundo: #00477f;          /* fundo das páginas, textos e botões escuros */
+  --color-painel: #0b5594;         /* menu lateral, barra do topo e cartões escuros */
+  --color-painel-borda: #2b6ca6;   /* bordas e linhas dos elementos escuros */
+  --color-azul: #0064b4;           /* avatares, etiquetas e separador ativo */
+  --color-interruptor: #0066b5;    /* interruptor ligado */
+  --color-interruptor-off: #b9cbdc;/* interruptor desligado */
+
+  /* Letras dentro dos cartões brancos */
+  --color-cartao-titulo: #0080cb;  /* títulos dos cartões */
+  --color-cartao-texto: #0e3553;   /* informações dos cartões */
+
+  /* Textos claros (sobre fundos azuis) */
+  --color-claro: #bfe2fe;          /* textos claros e botões claros */
+  --color-claro-2: #a9cdeb;        /* textos secundários claros */
+  --color-link: #7fc4fa;           /* ligações ("Ver detalhes", "Abrir") */
+
+  /* Textos e bordas das tabelas / formulários brancos */
+  --color-borda: #e3eaf1;          /* bordas das tabelas e botões brancos */
+  --color-borda-campo: #d5dee7;    /* bordas dos campos dos formulários */
+  --color-borda-pesquisa: #d3e6f7; /* borda das caixas de pesquisa */
+  --color-borda-upload: #b9c7d6;   /* borda da caixa de importar imagem */
+  --color-campo-bloqueado: #f5f8fb;/* fundo dos campos que não se podem editar */
+  --color-cinza: #6b7a8c;          /* textos cinzentos (paginação, ajudas) */
+  --color-cinza-titulo: #8a98a8;   /* títulos das colunas das tabelas */
+  --color-cinza-pesquisa: #6b8baa; /* texto de exemplo da pesquisa */
+  --color-icone-pesquisa: #3d6e99; /* lupa da pesquisa */
+  --color-texto-exemplo: #9aa8b6;  /* texto de exemplo dos campos */
+
+  /* Estados */
+  --color-sucesso: #1fb46a;        /* "Ativo" nas tabelas */
+  --color-sucesso-vivo: #3ddc8c;   /* "Ativo" nos cartões */
+  --color-sucesso-escuro: #15803d; /* "Ativa" no detalhe da lavandaria */
+  --color-perigo: #c62828;         /* botões e ícones de remover */
+  --color-perigo-claro: #ff6b70;   /* botão "Sim, terminar sessão" */
+  --color-erro: #e5484d;           /* mensagens de erro no login */
+
+  /* Login (lado do formulário) */
+  --color-login-texto: #2c2c2c;
+  --color-login-borda: #c9d3dd;
+
+  /* Fundo escuro atrás das janelas (modais) */
+  --color-sobreposicao: #001b33;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fundo);
+  font-family: var(--font-sans);
+}
+
+/* Esconde o "olho" que o Edge junta aos campos de palavra-passe (já temos o nosso) */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+/* Sombra usada nas janelas e avisos do Figma */
+.sombra-janela {
+  box-shadow: 0 12px 32px rgba(14, 53, 83, 0.1);
+}
+
+/* =========================================================
+   ANIMAÇÕES (só CSS, sem bibliotecas nem JavaScript)
+   Efeitos leves e curtos para dar sensação de movimento.
+   ========================================================= */
+
+/* Movimentos base */
+@keyframes aparecer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes subir {
+  from { opacity: 0; translate: 0 10px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes entrar-lado {
+  from { opacity: 0; translate: -24px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes janela-abrir {
+  from { opacity: 0; scale: 0.96; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes janela-fechar {
+  from { opacity: 1; scale: 1; }
+  to { opacity: 0; scale: 0.96; }
+}
+@keyframes desaparecer {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes aviso-entrar {
+  from { opacity: 0; translate: 24px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* Ao mudar de página: o conteúdo sobe e aparece suavemente */
+.animar-pagina {
+  animation: subir 0.35s ease-out both;
+}
+
+/* Cartão do login entra pela esquerda */
+.animar-entrada-lado {
+  animation: entrar-lado 0.5s ease-out both;
+}
+
+/* Textos que aparecem depois de carregar ("A carregar...") */
+.animar-aparecer {
+  animation: aparecer 0.3s ease-out both;
+}
+
+/* Linhas das tabelas aparecem uma a seguir à outra */
+.animar-linhas > tr {
+  animation: subir 0.3s ease-out both;
+}
+.animar-linhas > tr:nth-child(2) { animation-delay: 0.03s; }
+.animar-linhas > tr:nth-child(3) { animation-delay: 0.06s; }
+.animar-linhas > tr:nth-child(4) { animation-delay: 0.09s; }
+.animar-linhas > tr:nth-child(5) { animation-delay: 0.12s; }
+.animar-linhas > tr:nth-child(6) { animation-delay: 0.15s; }
+.animar-linhas > tr:nth-child(7) { animation-delay: 0.18s; }
+.animar-linhas > tr:nth-child(n + 8) { animation-delay: 0.21s; }
+
+/* Linha da tabela por baixo do rato */
+.animar-linhas > tr {
+  transition: background-color 0.15s ease;
+}
+.animar-linhas > tr:hover {
+  background-color: rgba(0, 100, 180, 0.03);
+}
+
+/* Janelas (modais): o fundo escurece e a janela "cresce" ao abrir */
+.animar-fundo-janela[data-state="open"] {
+  animation: aparecer 0.2s ease-out both;
+}
+.animar-fundo-janela[data-state="closed"] {
+  animation: desaparecer 0.15s ease-in both;
+}
+.animar-janela[data-state="open"] {
+  animation: janela-abrir 0.22s ease-out both;
+}
+.animar-janela[data-state="closed"] {
+  animation: janela-fechar 0.15s ease-in both;
+}
+
+/* Avisos ("Cliente removido", ...) entram pela direita */
+.animar-aviso {
+  animation: aviso-entrar 0.3s ease-out both;
+}
+
+/* Ao clicar: botões e ligações encolhem ligeiramente */
+button,
+a,
+[role="button"] {
+  transition: scale 0.12s ease, opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+button:not(:disabled):active,
+a:active,
+[role="button"]:active {
+  scale: 0.97;
+}
+
+/* Quem pediu ao sistema para reduzir movimento não vê animações */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+}

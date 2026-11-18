@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+<<<<<<< HEAD
+*.log
+.vscode/*
+!.vscode/extensions.json
+=======
+>>>>>>> 5924e55d1393fc7c696aa50e05a3e1dd28b9a0e7
