@@ -5,9 +5,9 @@
 
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, LayoutGrid, LogOut, Package, User } from 'lucide-react';
+import { ChevronDown, ChevronRight, LayoutGrid, LogOut, Package, User, Users, WashingMachine } from 'lucide-react';
 import { ModalConfirmacao } from './Modais';
-import { terminarSessao, temSessaoIniciada } from '../servicos/autenticacao';
+import { destinoDaFuncao, lerSessao, terminarSessao, temSessaoIniciada } from '../servicos/autenticacao';
 import { obterContaLavandaria } from '../servicos/servicosLavandaria';
 
 // Grupos do menu. Cada grupo tem os seus subitens.
@@ -49,8 +49,9 @@ export default function LayoutLavandaria() {
     if (temSessaoIniciada()) carregarConta();
   }, []);
 
-  if (!temSessaoIniciada()) {
-    return <Navigate to="/lavandaria/login" replace />;
+  const sessao = lerSessao();
+  if (!temSessaoIniciada() || sessao?.funcao !== 'Manager') {
+    return <Navigate to={destinoDaFuncao(sessao?.funcao) || '/lavandaria/login'} replace />;
   }
 
   function sair() {
@@ -100,6 +101,16 @@ export default function LayoutLavandaria() {
             </div>
           );
         })}
+
+        <NavLink to="/lavandaria/servicos" className={({ isActive }) => 'item-menu' + (isActive ? ' ativo' : '')}>
+          <WashingMachine size={20} />
+          Gestão de serviços
+        </NavLink>
+
+        <NavLink to="/lavandaria/utilizadores" className={({ isActive }) => 'item-menu' + (isActive ? ' ativo' : '')}>
+          <Users size={20} />
+          Gestão de utilizadores
+        </NavLink>
 
         <NavLink to="/lavandaria/perfil" className={({ isActive }) => 'item-menu' + (isActive ? ' ativo' : '')}>
           <User size={20} />

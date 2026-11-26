@@ -2,8 +2,8 @@
 //  CAMPOS DE FORMULÁRIO
 // =====================================================================
 
-import { useState } from 'react';
-import { Camera, ChevronDown, Eye, EyeOff, Upload } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Camera, Check, ChevronDown, Eye, EyeOff, Upload } from 'lucide-react';
 import { Avatar } from './Basicos';
 
 // Tamanho máximo das imagens (5 MB)
@@ -128,32 +128,67 @@ export function CampoPalavraPasse({ rotulo, icone, valor, aoMudar, placeholder, 
   );
 }
 
-// Lista de escolha (select) com ícone e seta.
+// Lista de escolha com ícone e seta.
 // opcoes pode ser ['A', 'B'] ou [{ valor: 'a', texto: 'A' }]
 export function CampoSelecao({ rotulo, icone, valor, aoMudar, opcoes, obrigatorio = false }) {
+  const [aberto, setAberto] = useState(false);
+  const caixa = useRef(null);
+  const itens = opcoes.map((opcao) => (
+    typeof opcao === 'string' ? { valor: opcao, texto: opcao } : opcao
+  ));
+  const escolhida = itens.find((item) => String(item.valor) === String(valor));
+
+  useEffect(() => {
+    function fechar(evento) {
+      if (caixa.current && !caixa.current.contains(evento.target)) setAberto(false);
+    }
+    document.addEventListener('mousedown', fechar);
+    return () => document.removeEventListener('mousedown', fechar);
+  }, []);
+
   return (
-    <div className="campo">
+    <div className="campo campo-selecao" ref={caixa}>
       {rotulo && (
         <label>
           {rotulo}
           {obrigatorio && ' *'}
         </label>
       )}
-      <div className="caixa-campo">
+      <button
+        type="button"
+        className={'caixa-campo' + (aberto ? ' aberto' : '')}
+        aria-haspopup="listbox"
+        aria-expanded={aberto}
+        onClick={() => setAberto((estado) => !estado)}
+      >
         {icone}
-        <select value={valor} onChange={(evento) => aoMudar(evento.target.value)}>
-          {opcoes.map((opcao) => {
-            const valorOpcao = typeof opcao === 'string' ? opcao : opcao.valor;
-            const textoOpcao = typeof opcao === 'string' ? opcao : opcao.texto;
+        <span className="valor-selecao">{escolhida ? escolhida.texto : 'Escolher'}</span>
+        <ChevronDown size={18} />
+      </button>
+      {aberto && (
+        <ul className="lista-selecao" role="listbox">
+          {itens.map((item) => {
+            const activo = String(item.valor) === String(valor);
             return (
-              <option key={valorOpcao} value={valorOpcao}>
-                {textoOpcao}
-              </option>
+              <li key={item.valor}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={activo}
+                  className={activo ? 'escolhida' : ''}
+                  onClick={() => {
+                    aoMudar(item.valor);
+                    setAberto(false);
+                  }}
+                >
+                  {item.texto}
+                  {activo && <Check size={16} />}
+                </button>
+              </li>
             );
           })}
-        </select>
-        <ChevronDown size={18} />
-      </div>
+        </ul>
+      )}
     </div>
   );
 }

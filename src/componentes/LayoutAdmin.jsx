@@ -6,18 +6,16 @@
 
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { Bike, Home, LogOut, Shirt, Store, User, Users, WashingMachine } from 'lucide-react';
+import { Home, LogOut, Shirt, Store, User, Users } from 'lucide-react';
 import { ModalConfirmacao } from './Modais';
-import { terminarSessao, temSessaoIniciada } from '../servicos/autenticacao';
+import { destinoDaFuncao, lerSessao, terminarSessao, temSessaoIniciada } from '../servicos/autenticacao';
 import { obterPerfil } from '../servicos/servicosAdmin';
 
 const itensDoMenu = [
   { texto: 'Página principal', endereco: '/admin', icone: Home },
-  { texto: 'Gestão de clientes', endereco: '/admin/clientes', icone: Users },
+  { texto: 'Gestão de utilizadores', endereco: '/admin/clientes', icone: Users },
   { texto: 'Gestão de lavandarias', endereco: '/admin/lavandarias', icone: Store },
-  { texto: 'Gestão de serviços', endereco: '/admin/servicos', icone: WashingMachine },
   { texto: 'Gestão de artigos', endereco: '/admin/artigos', icone: Shirt },
-  { texto: 'Gestão de entregadores', endereco: '/admin/entregadores', icone: Bike },
   { texto: 'Perfil da conta', endereco: '/admin/perfil', icone: User },
 ];
 
@@ -25,19 +23,19 @@ export default function LayoutAdmin() {
   const navegar = useNavigate();
   const [confirmarSaida, setConfirmarSaida] = useState(false);
   const [administrador, setAdministrador] = useState({ nomeCompleto: '', fotoUrl: '' });
+  const sessao = lerSessao();
+  const ehAdmin = sessao?.funcao === 'Admin';
 
-  // Vai buscar o nome e a foto do administrador à API
   function carregarPerfil() {
     obterPerfil().then(setAdministrador).catch(() => {});
   }
 
   useEffect(() => {
-    if (temSessaoIniciada()) carregarPerfil();
+    if (temSessaoIniciada() && ehAdmin) carregarPerfil();
   }, []);
 
-  // Sem sessão iniciada -> manda para o login
-  if (!temSessaoIniciada()) {
-    return <Navigate to="/admin/login" replace />;
+  if (!temSessaoIniciada() || !ehAdmin) {
+    return <Navigate to={destinoDaFuncao(sessao?.funcao) || '/admin/login'} replace />;
   }
 
   function sair() {

@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bike, ChevronRight, Shirt, Store, User, Users, WashingMachine } from 'lucide-react';
+import { ChevronRight, Shirt, Store, User, Users, WashingMachine } from 'lucide-react';
 import BarraSuperior from '../../componentes/BarraSuperior';
 import { EstadoCarregamento } from '../../componentes/Basicos';
 import { obterResumo } from '../../servicos/servicosAdmin';
@@ -36,16 +36,13 @@ export default function PaginaPrincipal() {
     { titulo: 'Lavandarias', valor: resumo.totalLavandarias, icone: Store },
     { titulo: 'Serviços ativos', valor: resumo.servicosAtivos, icone: WashingMachine },
     { titulo: 'Artigos', valor: resumo.totalArtigos, icone: Shirt },
-    { titulo: 'Entregadores', valor: resumo.totalEntregadores, icone: Bike },
   ];
 
   // Atalhos para as secções de gestão
   const seccoes = [
-    { titulo: 'Gestão de clientes', detalhe: formatarNumero(resumo.totalClientes) + ' clientes', endereco: '/admin/clientes', icone: Users },
+    { titulo: 'Gestão de utilizadores', detalhe: formatarNumero(resumo.totalClientes) + ' clientes', endereco: '/admin/clientes', icone: Users },
     { titulo: 'Gestão de lavandarias', detalhe: resumo.totalLavandarias + ' lavandarias', endereco: '/admin/lavandarias', icone: Store },
-    { titulo: 'Gestão de serviços', detalhe: resumo.servicosAtivos + ' serviços', endereco: '/admin/servicos', icone: WashingMachine },
     { titulo: 'Gestão de artigos', detalhe: resumo.totalArtigos + ' artigos', endereco: '/admin/artigos', icone: Shirt },
-    { titulo: 'Gestão de entregadores', detalhe: resumo.totalEntregadores + ' entregadores', endereco: '/admin/entregadores', icone: Bike },
     { titulo: 'Perfil da conta', detalhe: 'Administrador', endereco: '/admin/perfil', icone: User },
   ];
 
@@ -54,7 +51,7 @@ export default function PaginaPrincipal() {
       <BarraSuperior titulo="Página principal" />
 
       <div className="conteudo">
-        <div className="grelha-5">
+        <div className="grelha-4">
           {indicadores.map((item) => (
             <div key={item.titulo} className="cartao cartao-indicador">
               <span className="icone-quadrado">
@@ -70,7 +67,7 @@ export default function PaginaPrincipal() {
 
         <div className="linha-entre">
           <h2 className="titulo-cartao" style={{ fontSize: 16 }}>Secções de gestão</h2>
-          <span className="texto-cinza texto-pequeno">6 secções</span>
+          <span className="texto-cinza texto-pequeno">4 secções</span>
         </div>
 
         <div className="grelha-3" style={{ marginTop: -6 }}>

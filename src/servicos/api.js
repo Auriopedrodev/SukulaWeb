@@ -6,7 +6,97 @@
 //  - Envia o token JWT no cabeçalho "Authorization: Bearer ...".
 // =====================================================================
 
-import { URL_DA_API, NOME_DO_TOKEN, NOME_DO_UTILIZADOR } from '../configuracao';
+import axios from 'axios';
+import {
+  URL_DA_API,
+  NOME_DO_TOKEN,
+  NOME_DO_TOKEN_ATUALIZACAO,
+  NOME_DA_SESSAO,
+  NOME_DO_UTILIZADOR,
+} from '../configuracao';
+
+// Cliente Axios usado pela autenticação.
+// O endereço base é o da API (ex.: http://localhost:5164).
+export const api = axios.create({
+  baseURL: URL_DA_API,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// Login, registo e palavra-passe não levam o token. Um Bearer antigo
+// faz a API cortar a resposta (401 e corpo incompleto).
+export function caminhoPublico(caminho) {
+  const url = String(caminho || '');
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/signup') ||
+    url.includes('/auth/forgot-password') ||
+    url.includes('/auth/reset-password') ||
+    url.includes('/auth/refresh-token')
+  );
+}
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(NOME_DO_TOKEN);
+  if (token && !caminhoPublico(config.url)) config.headers.Authorization = `Bearer ${token}`;
+  // O Axios junta o boundary do multipart sozinho. O JSON por defeito impedia isso.
+  if (config.data instanceof FormData && config.headers?.delete) {
+    config.headers.delete('Content-Type');
+  }
+  return config;
+});
+
+// errorType da API: 2 validação, 3 não encontrado, 5 conflito.
+export const TIPO_VALIDACAO = 2;
+export const TIPO_NAO_ENCONTRADO = 3;
+export const TIPO_CONFLITO = 5;
+
+const SEM_LIGACAO = 'Não foi possível ligar à API. Verifique se está ligada.';
+
+// Lê a frase que a API devolve.
+// errors[].description (ou Errors/Description), texto, message ou title.
+export const getApiErrorMessage = (error, fallback = 'Ocorreu um erro. Tente novamente.') => {
+  try {
+    if (!error?.response) return SEM_LIGACAO;
+
+    const errBody = error.response.data;
+    let backendMessage = '';
+
+    if (errBody) {
+      const lista = Array.isArray(errBody.errors) ? errBody.errors : Array.isArray(errBody.Errors) ? errBody.Errors : null;
+      if (lista && lista.length > 0) {
+        const descriptions = lista
+          .map((e) => e?.description || e?.Description)
+          .filter((d) => typeof d === 'string' && d.trim().length > 0);
+        if (descriptions.length > 0) backendMessage = descriptions.join('\n');
+      } else if (typeof errBody === 'string') {
+        backendMessage = errBody;
+      } else if (typeof errBody.message === 'string') {
+        backendMessage = errBody.message;
+      } else if (typeof errBody.Message === 'string') {
+        backendMessage = errBody.Message;
+      } else if (typeof errBody.title === 'string') {
+        backendMessage = errBody.title;
+      }
+    }
+
+    return backendMessage || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+// O texto vem de getApiErrorMessage. status, code e errorType ficam
+// para quem distingue 404 de lista vazia, validação e conflito.
+export function erroDoPedido(erro) {
+  const dados = erro?.response?.data;
+  const lista = dados?.errors || dados?.Errors;
+  const primeiro = Array.isArray(lista) ? lista[0] : null;
+  return Object.assign(new Error(getApiErrorMessage(erro)), {
+    status: erro?.response?.status ?? 0,
+    code: primeiro?.code || primeiro?.Code,
+    errorType: primeiro?.errorType ?? primeiro?.ErrorType,
+  });
+}
 
 // Faz um pedido ao servidor e devolve a resposta em JSON.
 // metodo: 'GET', 'POST', 'PUT' ou 'DELETE'
@@ -29,6 +119,8 @@ export async function pedidoApi(metodo, caminho, dados) {
   // 401 = sessão expirada ou inválida -> volta ao login
   if (resposta.status === 401) {
     localStorage.removeItem(NOME_DO_TOKEN);
+    localStorage.removeItem(NOME_DO_TOKEN_ATUALIZACAO);
+    localStorage.removeItem(NOME_DA_SESSAO);
     localStorage.removeItem(NOME_DO_UTILIZADOR);
     const ehLavandaria = window.location.pathname.startsWith('/lavandaria');
     window.location.href = ehLavandaria ? '/lavandaria/login' : '/admin/login';
@@ -36,7 +128,7 @@ export async function pedidoApi(metodo, caminho, dados) {
   }
 
   if (!resposta.ok) {
-    throw new Error(await lerMensagemDeErro(resposta));
+    throw new Error(await mensagemDoFetch(resposta));
   }
 
   // 204 = "sem conteúdo" (normal num DELETE ou PUT)
@@ -61,26 +153,20 @@ export async function enviarFicheiro(caminho, ficheiro) {
   });
 
   if (!resposta.ok) {
-    throw new Error(await lerMensagemDeErro(resposta));
+    throw new Error(await mensagemDoFetch(resposta));
   }
   return resposta.status === 204 ? null : resposta.json();
 }
 
-// Lê a mensagem de erro devolvida pelo C#.
-// Aceita { "mensagem": "..." } ou o formato "ProblemDetails" do ASP.NET Core.
-async function lerMensagemDeErro(resposta) {
+// O fetch não traz o erro no formato do Axios. O corpo entra na mesma função.
+async function mensagemDoFetch(resposta) {
+  let dados = null;
   try {
-    const erro = await resposta.json();
-    if (erro.mensagem) return erro.mensagem;
-    if (erro.errors) {
-      const primeiroCampo = Object.keys(erro.errors)[0];
-      return erro.errors[primeiroCampo][0];
-    }
-    if (erro.title) return erro.title;
+    dados = await resposta.json();
   } catch {
-    // a resposta não era JSON
+    dados = null;
   }
-  return 'Ocorreu um erro (código ' + resposta.status + '). Tente novamente.';
+  return getApiErrorMessage({ response: { data: dados, status: resposta.status } });
 }
 
 // Atalhos para escrever menos código nos outros ficheiros.

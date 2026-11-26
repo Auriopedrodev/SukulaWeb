@@ -17,12 +17,8 @@ import PaginaPrincipal from './paginas/admin/PaginaPrincipal';
 import GestaoClientes from './paginas/admin/GestaoClientes';
 import GestaoLavandarias from './paginas/admin/GestaoLavandarias';
 import DetalhesLavandaria from './paginas/admin/DetalhesLavandaria';
-import GestaoServicos from './paginas/admin/GestaoServicos';
-import DetalhesServico from './paginas/admin/DetalhesServico';
-import FormularioServico from './paginas/admin/FormularioServico';
 import GestaoArtigos from './paginas/admin/GestaoArtigos';
 import DetalhesArtigo from './paginas/admin/DetalhesArtigo';
-import GestaoEntregadores from './paginas/admin/GestaoEntregadores';
 import PerfilAdmin from './paginas/admin/PerfilAdmin';
 
 // ---- Páginas da Lavandaria ----
@@ -35,12 +31,20 @@ import PedidosEmProcessamento from './paginas/lavandaria/PedidosEmProcessamento'
 import HistoricoPedidos from './paginas/lavandaria/HistoricoPedidos';
 import DetalhesPedido from './paginas/lavandaria/DetalhesPedido';
 import PerfilLavandaria from './paginas/lavandaria/PerfilLavandaria';
+import UtilizadoresLavandaria from './paginas/lavandaria/UtilizadoresLavandaria';
+import GestaoServicos from './paginas/lavandaria/GestaoServicos';
+import Registo from './paginas/Registo';
+import EsqueciPalavraPasse from './paginas/EsqueciPalavraPasse';
+import RedefinirPalavraPasse from './paginas/RedefinirPalavraPasse';
 
 export default function App() {
   return (
     <Routes>
       {/* Endereço inicial: vai para o login do administrador */}
       <Route path="/" element={<Navigate to="/admin/login" replace />} />
+      <Route path="/registo" element={<Registo />} />
+      <Route path="/esqueci-palavra-passe" element={<EsqueciPalavraPasse />} />
+      <Route path="/redefinir-palavra-passe" element={<RedefinirPalavraPasse />} />
 
       {/* ================= PAINEL DO ADMINISTRADOR ================= */}
       <Route path="/admin/login" element={<LoginAdmin />} />
@@ -49,13 +53,8 @@ export default function App() {
         <Route path="clientes" element={<GestaoClientes />} />
         <Route path="lavandarias" element={<GestaoLavandarias />} />
         <Route path="lavandarias/:id" element={<DetalhesLavandaria />} />
-        <Route path="servicos" element={<GestaoServicos />} />
-        <Route path="servicos/novo" element={<FormularioServico />} />
-        <Route path="servicos/:id" element={<DetalhesServico />} />
-        <Route path="servicos/:id/editar" element={<FormularioServico />} />
         <Route path="artigos" element={<GestaoArtigos />} />
         <Route path="artigos/:id" element={<DetalhesArtigo />} />
-        <Route path="entregadores" element={<GestaoEntregadores />} />
         <Route path="perfil" element={<PerfilAdmin />} />
       </Route>
 
@@ -70,6 +69,8 @@ export default function App() {
         <Route path="pedidos/em-processamento" element={<PedidosEmProcessamento />} />
         <Route path="pedidos/historico" element={<HistoricoPedidos />} />
         <Route path="pedidos/:separador/:id" element={<DetalhesPedido />} />
+        <Route path="servicos" element={<GestaoServicos />} />
+        <Route path="utilizadores" element={<UtilizadoresLavandaria />} />
         <Route path="perfil" element={<PerfilLavandaria />} />
       </Route>
 

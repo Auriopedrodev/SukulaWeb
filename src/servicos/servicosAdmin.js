@@ -4,8 +4,8 @@
 //  Se USAR_DADOS_FICTICIOS = true, os dados vêm de "src/dados/dadosAdmin.js".
 // =====================================================================
 
-import { obter, criar, atualizar, apagar, enviarFicheiro, montarFiltros, simular, paginar } from './api';
-import { USAR_DADOS_FICTICIOS, LINHAS_POR_PAGINA } from '../configuracao';
+import { api, erroDoPedido, obter, criar, atualizar, apagar, enviarFicheiro, montarFiltros, simular, paginar } from './api';
+import { USAR_DADOS_FICTICIOS, LINHAS_POR_PAGINA, URL_DA_API } from '../configuracao';
 import * as dados from '../dados/dadosAdmin';
 
 // Pequena ajuda: procura texto sem ligar a maiúsculas/minúsculas
@@ -83,201 +83,167 @@ export function removerCliente(id) {
 }
 
 // ---------------------------------------------------------------------
-//  LAVANDARIAS
+//  ARTIGOS, LAVANDARIAS E SERVIÇOS  (/api/v1)
+//  Estes três recursos falam sempre com a API. Os nomes dos campos
+//  são os da API (idArtigo, horarioFuncionamento, artigoId, ...).
 // ---------------------------------------------------------------------
 
-// GET /api/lavandarias?pesquisa=
-export function listarLavandarias(pesquisa) {
-  if (USAR_DADOS_FICTICIOS) {
-    return simular(dados.lavandarias.filter((l) => contem(l.nome, pesquisa) || contem(l.localizacao, pesquisa)));
+const ARTIGOS = '/api/v1/artigos';
+const LAVANDARIAS = '/api/v1/lavandarias';
+const SERVICOS = '/api/v1/servicos';
+const UTILIZADORES = '/api/v1/utilizadores';
+
+async function pedir(promessa) {
+  try {
+    const resposta = await promessa;
+    return resposta.status === 204 ? null : resposta.data;
+  } catch (erro) {
+    throw erroDoPedido(erro);
   }
-  return obter('/lavandarias' + montarFiltros({ pesquisa }));
 }
 
-// GET /api/lavandarias/{id}
-export function obterLavandaria(id) {
-  if (USAR_DADOS_FICTICIOS) {
-    return simular(dados.lavandarias.find((l) => l.id === Number(id)));
-  }
-  return obter('/lavandarias/' + id);
+// Junta a base da API a um caminho relativo de foto ("/lavandarias/ficheiro").
+export function urlDaFoto(foto) {
+  if (!foto) return '';
+  if (foto.startsWith('http') || foto.startsWith('blob:')) return foto;
+  return URL_DA_API + foto;
 }
 
-// POST /api/lavandarias
-// Envia: { nome, localizacao, descricao, diasFuncionamento: ["Seg",...], abertura: "08:00", encerramento: "19:00",
-//          servicos: [{ servicoId, categoria, artigos: [...], preco }] }
-export function adicionarLavandaria(lavandaria) {
-  if (USAR_DADOS_FICTICIOS) {
-    const nova = {
-      ...lavandaria,
-      id: Date.now(),
-      avaliacao: null,
-      ativa: true,
-      logoUrl: '',
-      fotoUrl: '',
-      moradaCompleta: lavandaria.localizacao,
-      horarioResumo: lavandaria.diasFuncionamento[0] + ' – ' + lavandaria.diasFuncionamento.at(-1) + ' · ' + lavandaria.abertura + ' – ' + lavandaria.encerramento,
-      categorias: [...new Set(lavandaria.servicos.map((s) => s.categoria))],
-      totalServicos: lavandaria.servicos.length,
-      horario: [],
-    };
-    dados.lavandarias.push(nova);
-    return simular(nova);
-  }
-  return criar('/lavandarias', lavandaria);
+function formularioLavandaria(dados, foto) {
+  const form = new FormData();
+  form.append('nomeLavandaria', dados.nomeLavandaria);
+  form.append('horarioFuncionamento', dados.horarioFuncionamento);
+  form.append('endereco', dados.endereco);
+  form.append('latitude', String(dados.latitude));
+  form.append('longitude', String(dados.longitude));
+  form.append('descricao', dados.descricao);
+  if (foto) form.append('foto', foto);
+  return form;
 }
 
-// PUT /api/lavandarias/{id}
-export function editarLavandaria(id, lavandaria) {
-  if (USAR_DADOS_FICTICIOS) {
-    const posicao = dados.lavandarias.findIndex((l) => l.id === id);
-    dados.lavandarias[posicao] = { ...dados.lavandarias[posicao], ...lavandaria, totalServicos: lavandaria.servicos.length };
-    return simular(dados.lavandarias[posicao]);
-  }
-  return atualizar('/lavandarias/' + id, lavandaria);
+// GET /api/v1/artigos  → array. Vazio é [].
+export function listarArtigos() {
+  return pedir(api.get(ARTIGOS));
 }
 
-// PUT /api/lavandarias/{id}/estado   Envia: { ativa: true/false }
-export function alterarEstadoLavandaria(id, ativa) {
-  if (USAR_DADOS_FICTICIOS) {
-    dados.lavandarias.find((l) => l.id === id).ativa = ativa;
-    return simular(null);
-  }
-  return atualizar('/lavandarias/' + id + '/estado', { ativa });
-}
-
-// DELETE /api/lavandarias/{id}
-export function removerLavandaria(id) {
-  if (USAR_DADOS_FICTICIOS) {
-    const posicao = dados.lavandarias.findIndex((l) => l.id === id);
-    dados.lavandarias.splice(posicao, 1);
-    return simular(null);
-  }
-  return apagar('/lavandarias/' + id);
-}
-
-// POST /api/lavandarias/{id}/foto   (ficheiro no campo "ficheiro", IFormFile em C#)
-export function enviarFotoLavandaria(id, ficheiro) {
-  if (USAR_DADOS_FICTICIOS) {
-    const lavandaria = dados.lavandarias.find((l) => l.id === id);
-    lavandaria.logoUrl = URL.createObjectURL(ficheiro);
-    return simular({ fotoUrl: lavandaria.logoUrl });
-  }
-  return enviarFicheiro('/lavandarias/' + id + '/foto', ficheiro);
-}
-
-// ---------------------------------------------------------------------
-//  SERVIÇOS (Lavagem + Engomar, Lavagem a Seco, ...)
-// ---------------------------------------------------------------------
-
-// GET /api/servicos?pesquisa=&categoria=
-export function listarServicos(pesquisa, categoria) {
-  if (USAR_DADOS_FICTICIOS) {
-    return simular(dados.servicos.filter((s) => contem(s.nome, pesquisa) && (!categoria || s.categoria === categoria)));
-  }
-  return obter('/servicos' + montarFiltros({ pesquisa, categoria }));
-}
-
-// GET /api/servicos/{id}
-// Recebe também: artigosDetalhados: [{ nome, cores, tamanhos }] e lavandarias: [{ id, nome, localizacao, fotoUrl }]
-export function obterServico(id) {
-  if (USAR_DADOS_FICTICIOS) {
-    const servico = dados.servicos.find((s) => s.id === Number(id));
-    return simular({
-      ...servico,
-      artigosDetalhados: dados.artigos.filter((a) => servico.artigos.includes(a.nome)),
-      lavandarias: dados.lavandarias.slice(0, 3),
-    });
-  }
-  return obter('/servicos/' + id);
-}
-
-// POST /api/servicos   Envia: { nome, categoria, precoBase, ativo, artigos: ["Cortinado", ...] }
-export function adicionarServico(servico) {
-  if (USAR_DADOS_FICTICIOS) {
-    const novo = { ...servico, id: Date.now(), totalLavandarias: 0 };
-    dados.servicos.push(novo);
-    return simular(novo);
-  }
-  return criar('/servicos', servico);
-}
-
-// PUT /api/servicos/{id}
-export function editarServico(id, servico) {
-  if (USAR_DADOS_FICTICIOS) {
-    const posicao = dados.servicos.findIndex((s) => s.id === Number(id));
-    dados.servicos[posicao] = { ...dados.servicos[posicao], ...servico };
-    return simular(dados.servicos[posicao]);
-  }
-  return atualizar('/servicos/' + id, servico);
-}
-
-// DELETE /api/servicos/{id}
-export function removerServico(id) {
-  if (USAR_DADOS_FICTICIOS) {
-    dados.servicos.splice(dados.servicos.findIndex((s) => s.id === Number(id)), 1);
-    return simular(null);
-  }
-  return apagar('/servicos/' + id);
-}
-
-// ---------------------------------------------------------------------
-//  ARTIGOS (Camisa, Calça, Ténis, ...)
-// ---------------------------------------------------------------------
-
-// GET /api/artigos?pesquisa=&categoria=&pagina=1&tamanhoPagina=9
-export function listarArtigos(pesquisa, categoria, pagina) {
-  if (USAR_DADOS_FICTICIOS) {
-    const filtrados = dados.artigos.filter(
-      (a) => (contem(a.nome, pesquisa) || a.cores.some((cor) => contem(cor, pesquisa))) && (!categoria || a.categoria === categoria)
-    );
-    return simular(paginar(filtrados, pagina, 9));
-  }
-  return obter('/artigos' + montarFiltros({ pesquisa, categoria, pagina, tamanhoPagina: 9 }));
-}
-
-// GET /api/artigos/todos   (lista completa, sem páginas, para os formulários)
 export function listarTodosArtigos() {
-  if (USAR_DADOS_FICTICIOS) return simular(dados.artigos);
-  return obter('/artigos/todos');
+  return listarArtigos();
 }
 
-// GET /api/artigos/{id}
-// Recebe também: servicosDetalhados: [{ id, nome, categoria, precoBase, totalLavandarias }]
-export function obterArtigo(id) {
-  if (USAR_DADOS_FICTICIOS) {
-    const artigo = dados.artigos.find((a) => a.id === Number(id));
-    return simular({ ...artigo, servicosDetalhados: dados.servicos.filter((s) => s.artigos.includes(artigo.nome)) });
-  }
-  return obter('/artigos/' + id);
+// GET /api/v1/artigos/{idArtigo}
+export function obterArtigo(idArtigo) {
+  return pedir(api.get(ARTIGOS + '/' + idArtigo));
 }
 
-// POST /api/artigos   Envia: { nome, categoria, cores: ["Azul"], tamanhos: ["M"], servicos: ["Lavagem a Seco"] }
+// POST /api/v1/artigos  { nome, categoria }
 export function adicionarArtigo(artigo) {
-  if (USAR_DADOS_FICTICIOS) {
-    const novo = { ...artigo, id: Date.now() };
-    dados.artigos.push(novo);
-    return simular(novo);
-  }
-  return criar('/artigos', artigo);
+  return pedir(api.post(ARTIGOS, { nome: artigo.nome, categoria: artigo.categoria }));
 }
 
-// PUT /api/artigos/{id}
-export function editarArtigo(id, artigo) {
-  if (USAR_DADOS_FICTICIOS) {
-    const posicao = dados.artigos.findIndex((a) => a.id === Number(id));
-    dados.artigos[posicao] = { ...dados.artigos[posicao], ...artigo };
-    return simular(dados.artigos[posicao]);
-  }
-  return atualizar('/artigos/' + id, artigo);
+// PUT /api/v1/artigos/{idArtigo}
+export function editarArtigo(idArtigo, artigo) {
+  return pedir(api.put(ARTIGOS + '/' + idArtigo, { nome: artigo.nome, categoria: artigo.categoria }));
 }
 
-// DELETE /api/artigos/{id}
-export function removerArtigo(id) {
-  if (USAR_DADOS_FICTICIOS) {
-    dados.artigos.splice(dados.artigos.findIndex((a) => a.id === Number(id)), 1);
-    return simular(null);
+// DELETE /api/v1/artigos/{idArtigo} → 204
+export function removerArtigo(idArtigo) {
+  return pedir(api.delete(ARTIGOS + '/' + idArtigo));
+}
+
+// GET /api/v1/lavandarias
+// 404 com code Lavandaria.ListaVazia é uma lista vazia, não um erro.
+export async function listarLavandarias() {
+  try {
+    const resposta = await api.get(LAVANDARIAS);
+    return resposta.data;
+  } catch (erro) {
+    const convertido = erroDoPedido(erro);
+    if (convertido.status === 404 && convertido.code === 'Lavandaria.ListaVazia') return [];
+    throw convertido;
   }
-  return apagar('/artigos/' + id);
+}
+
+// GET /api/v1/lavandarias/{idLavandaria}
+export function obterLavandaria(idLavandaria) {
+  return pedir(api.get(LAVANDARIAS + '/' + idLavandaria));
+}
+
+// POST /api/v1/lavandarias  multipart/form-data
+export function adicionarLavandaria(dados, foto) {
+  return pedir(api.post(LAVANDARIAS, formularioLavandaria(dados, foto)));
+}
+
+// PUT /api/v1/lavandarias/{idLavandaria}
+// Sem ficheiro, a foto actual mantém-se.
+export function editarLavandaria(idLavandaria, dados, foto) {
+  return pedir(api.put(LAVANDARIAS + '/' + idLavandaria, formularioLavandaria(dados, foto)));
+}
+
+// DELETE /api/v1/lavandarias/{idLavandaria} → 204
+export function removerLavandaria(idLavandaria) {
+  return pedir(api.delete(LAVANDARIAS + '/' + idLavandaria));
+}
+
+// GET /api/v1/utilizadores/clientes → array. Vazio é [].
+export function listarClientesDaApi() {
+  return pedir(api.get(UTILIZADORES + '/clientes'));
+}
+
+// GET /api/v1/utilizadores/managers → array. Vazio é [].
+// Só o Admin pode chamar. O ecrã do gestor da lavandaria não usa esta função.
+export function listarGestores() {
+  return pedir(api.get(UTILIZADORES + '/managers'));
+}
+
+// POST /api/v1/auth/manager  { nomeCompleto, palavraPasse, email, telefone, lavandariaId }
+export function criarGestor(gestor) {
+  return pedir(api.post('/api/v1/auth/manager', {
+    nomeCompleto: gestor.nomeCompleto,
+    palavraPasse: gestor.palavraPasse,
+    email: gestor.email,
+    telefone: gestor.telefone,
+    lavandariaId: gestor.lavandariaId,
+  }));
+}
+
+// GET /api/v1/servicos
+export function listarServicos() {
+  return pedir(api.get(SERVICOS));
+}
+
+// GET /api/v1/servicos/lavandaria/{idLavandaria}
+export function listarServicosDaLavandaria(idLavandaria) {
+  return pedir(api.get(SERVICOS + '/lavandaria/' + idLavandaria));
+}
+
+// GET /api/v1/servicos/{idServico}
+export function obterServico(idServico) {
+  return pedir(api.get(SERVICOS + '/' + idServico));
+}
+
+// POST /api/v1/servicos  { nome, precoBase, artigoId, lavandariaId }
+export function adicionarServico(servico) {
+  return pedir(api.post(SERVICOS, {
+    nome: servico.nome,
+    precoBase: servico.precoBase,
+    artigoId: servico.artigoId,
+    lavandariaId: servico.lavandariaId,
+  }));
+}
+
+// PUT /api/v1/servicos/{idServico}
+export function editarServico(idServico, servico) {
+  return pedir(api.put(SERVICOS + '/' + idServico, {
+    nome: servico.nome,
+    precoBase: servico.precoBase,
+    artigoId: servico.artigoId,
+    lavandariaId: servico.lavandariaId,
+  }));
+}
+
+// DELETE /api/v1/servicos/{idServico} → 204
+export function removerServico(idServico) {
+  return pedir(api.delete(SERVICOS + '/' + idServico));
 }
 
 // ---------------------------------------------------------------------
