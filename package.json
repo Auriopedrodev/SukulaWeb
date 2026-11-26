@@ -1,15 +1,10 @@
 {
-<<<<<<< HEAD
   "name": "sukula-admin",
-=======
-  "name": "sukula-web",
->>>>>>> 5924e55d1393fc7c696aa50e05a3e1dd28b9a0e7
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-<<<<<<< HEAD
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
@@ -34,19 +29,5 @@
     "tailwindcss": "^4.1.11",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
-=======
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "lucide-react": "0.460.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-router-dom": "6.28.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "4.3.4",
-    "vite": "5.4.11"
->>>>>>> 5924e55d1393fc7c696aa50e05a3e1dd28b9a0e7
   }
 }

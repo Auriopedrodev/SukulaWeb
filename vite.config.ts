@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: { port: 3000 },
   resolve: {
     // Permite escrever "@/components/..." em vez de "../../components/..."
     alias: { "@": path.resolve(__dirname, "./src") },
